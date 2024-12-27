@@ -1,32 +1,67 @@
-import React from 'react'
+import React, {useState, useEffect} from 'react'
 import {Table} from 'react-bootstrap';
 
-export const TicketsTable = () => {
+export const TicketsTable = ({searchType, searchContent, initialData, page}) => {
 
-    const mockTickets = [
-        {id: 1, title: 'Ticket 1', status: 'Open', priority: 'High', createdAt: '2024-01-01'},
-        {id: 2, title: 'Ticket 2', status: 'Closed', priority: 'Low', createdAt: '2024-01-02'},
-        {id: 3, title: 'Ticket 3', status: 'In Progress', priority: 'Medium', createdAt: '2024-01-03'},
-    ];
+    const [displayedTickets, setDisplayedTickets] = useState(initialData);
+
+    
+    const onSearch = () => {
+        const filteredTickets = initialData.filter((ticket) => {
+            if (searchType === 'subject') {
+                return ticket.subject.toLowerCase().includes(searchContent.toLowerCase());
+            }
+            else if (searchType === 'status') {
+                return ticket.status.toLowerCase().includes(searchContent.toLowerCase());
+            }
+            else if (searchType === 'id') {
+                return ticket.id.toString().includes(searchContent);
+            }
+        });
+        setDisplayedTickets(filteredTickets);
+    }
+    useEffect(() => {
+        if (page === 'dashboard') {
+            setDisplayedTickets(initialData);
+        }
+        else {
+            onSearch();
+        }
+    }, [searchType, searchContent]);
 
     return (
-        <Table striped bordered hover size='sm'>
+        <>
+        {displayedTickets.length > 0 ? (
+            <Table striped bordered hover size='sm'>
             <thead>
                 <tr>
-                    {Object.keys(mockTickets[0]).map((key, index) => (
+                    {Object.keys(displayedTickets[0]).map((key, index) => (
                         <th >{key.toUpperCase()}</th>
                     ))}
                 </tr>
             </thead>
             <tbody>
-                {mockTickets.map((ticket, index) => (
-                    <tr key={index}>
-                        {Object.values(ticket).map((value, index) => (
-                            <td key={index}>{value}</td>
-                        ))}
-                    </tr>
-                ))}
+                {
+                    displayedTickets.map((ticket) => {
+                        return <tr>
+                            {Object.keys(ticket).map((key) => {
+                                if (key !== 'history') {
+                                    return <td>{ticket[key]}</td>
+                                }
+                                else {
+                                    return <td>
+                                       <a href={`/ticket/${ticket.id}`}>View</a>
+                                    </td>
+                                }
+                            })}
+                        </tr>
+                    })
+                }
             </tbody>
         </Table>
+        ) : (
+        <p>No tickets found</p>
+    )}
+    </>
     )
 }

@@ -38,6 +38,7 @@
 
 .default-layout-main {
   grid-area: default-layout-main;
+  padding: 1rem;
 }
 
 .default-layout-footer {

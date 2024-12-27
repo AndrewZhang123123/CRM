@@ -1,6 +1,7 @@
 import {React, useState, useRef} from 'react';
 import {Form, Input, Button} from 'react-bootstrap';
 import {useNavigate} from 'react-router-dom';
+import {userLogin} from './api/userApi';
 import "./LoginPage.css";
 
 const LoginPage = () => {
@@ -8,16 +9,36 @@ const LoginPage = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [validated, setValidated] = useState(false);
-
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [showNormalWarning, setShowNormalWarning] = useState(false);
     const formRef = useRef(null);
     const resetFormRef = useRef(null);
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         // get the email and password from the form
         console.log(e)
-        if (email && password) {
-            navigate("/home");
+        try{
+            const response = await userLogin({email, password});
+            if (response.status === 200) {
+                console.log("in if");
+                navigate("/home");
+            }
+            else {
+                console.log("in else");
+                alert(response.message);
+            }
+        } catch (error) {
+            if (error.status === 404) {
+                setEmailError("User not found");
+            }
+            else if (error.status === 401) {
+                setPasswordError("Invalid password");
+            }
+            else {
+                alert("Something went wrong, please try again later.");
+            }
         }
     }
 
@@ -29,11 +50,11 @@ const LoginPage = () => {
 
     const onValidation = (e) => {
         e.preventDefault();
-        setValidated(true);
+        console.log("check result", formRef.current.checkValidity());
         if (formRef.current.checkValidity()) {
             handleSubmit(e);
         } else {
-            console.log("invalid");
+            setShowNormalWarning(true);
         }
     }
 
@@ -48,10 +69,14 @@ const LoginPage = () => {
     }
 
     const handleEmailChange = (e) => {
+        setEmailError("");
+        setShowNormalWarning(false);
         setEmail(e.target.value);
     }
 
     const handlePasswordChange = (e) => {
+        setPasswordError("");
+        setShowNormalWarning(false);
         setPassword(e.target.value);
     }
 
@@ -64,13 +89,17 @@ const LoginPage = () => {
                         <Form className="login-form" noValidate validated={validated} onSubmit={onValidation} ref={formRef} autoComplete="off">
                             <Form.Group className="d-flex flex-column mb-2">
                                 <Form.Label>Email</Form.Label>
-                                <Form.Control type="email" name="loginEmail" placeholder="Enter email" required onChange={handleEmailChange} value={email} />
-                                <Form.Control.Feedback type="invalid">Please enter a valid email address.</Form.Control.Feedback>
+                                <Form.Control isInvalid={emailError || showNormalWarning} type="email" name="loginEmail" placeholder="Enter email" required onChange={handleEmailChange} value={email} />
+                                <Form.Control.Feedback type="invalid">
+                                    {showNormalWarning ? "Please enter a valid email address." : emailError}
+                                </Form.Control.Feedback>
                             </Form.Group>
                             <Form.Group className="mb-2">
                                 <Form.Label>Password</Form.Label>
-                                <Form.Control type="password" name="loginPassword" placeholder="Enter password" required onChange={handlePasswordChange} value={password} />
-                                <Form.Control.Feedback type="invalid">Please enter a valid password.</Form.Control.Feedback>
+                                <Form.Control isInvalid={passwordError} type="password" name="loginPassword" placeholder="Enter password" required onChange={handlePasswordChange} value={password} />
+                                <Form.Control.Feedback type="invalid">
+                                    {passwordError}
+                                </Form.Control.Feedback>
                             </Form.Group>
                             <Button type="submit" className='btn-submit btn-fullwidth mt-2'>Login</Button>
                         </Form>
